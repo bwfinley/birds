@@ -15,6 +15,7 @@ curScreen = 0
 cursPos = 0
 cursBound = 0
 cTime = time.localtime(time.time())
+soundPlaying = False
 
 #initialize lcd
 mylcd = I2C_LCD_driver.lcd()
@@ -332,7 +333,7 @@ while True:
 									currentNum = str(lastKey)
 								else: 
 									currentNum += str(lastKey)
-								mylcd.lcd_display_string(currentNum,2,12+index)
+								mylcd.lcd_display_string(currentNum,2,12)
 								mylcd.lcd_display_string("_",2,12+index)
 								index+=1
 								time.sleep(0.075)
@@ -342,7 +343,7 @@ while True:
 				if cursPos == 1:
 					numConfirmed = False
 					currentNum = "0"
-					index=0;
+					index=0
 					mylcd.lcd_display_string("X",3,0)
 					mylcd.lcd_display_string("_",3,12)
 					time.sleep(0.1)
@@ -356,7 +357,7 @@ while True:
 								currentNum += str(lastKey)
 							if lastKey != "#":
 								currentNum += str(lastKey)
-								mylcd.lcd_display_string(currentNum,3,12+index)
+								mylcd.lcd_display_string(currentNum,3,12)
 								mylcd.lcd_display_string("_",3,12+index)
 								index+=1
 								time.sleep(0.075)
@@ -375,8 +376,11 @@ while True:
 	if alarm[0] != -1 and fileNum != -1:
 		hour = str(alarm[0])+str(alarm[1])
 		minute = str(alarm[2])+str(alarm[3])
-		if ( int(hour) == int(time.strftime("%H")) and int(minute) == int(time.strftime("%M")) ):
+		if ( (int(hour) == int(time.strftime("%H")) and int(minute) == int(time.strftime("%M"))) or soundPlaying ):
 			alarm[0] = -1
 			pygame.mixer.music.load(dir_list[fileNum])
-			pygame.mixer.music.play(-1,0.0)
+			if pygame.mixer.get_busy() == False and startTime :
+				pygame.mixer.music.play(1,0.0)
+				startTime = time.localtime()
+			
 			  
