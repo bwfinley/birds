@@ -15,7 +15,7 @@ curScreen = 0
 cursPos = 0
 cursBound = 0
 cTime = time.localtime(time.time())
-soundPlaying = False
+loopStarted = False
 
 #initialize lcd
 mylcd = I2C_LCD_driver.lcd()
@@ -43,7 +43,7 @@ alarmTime = ""
 device = [-1,-1,-1,-1]	
 
 #play settings
-numLoops = 0
+numLoops = 1
 downTime = 0
 
 #prints the main menu screen onto the LCD
@@ -381,11 +381,13 @@ while True:
 	if alarm[0] != -1 and fileNum != -1:
 		hour = str(alarm[0])+str(alarm[1])
 		minute = str(alarm[2])+str(alarm[3])
-		if ( (int(hour) == int(time.strftime("%H")) and int(minute) == int(time.strftime("%M"))) or soundPlaying ):
-			alarm[0] = -1
-			pygame.mixer.music.load(dir_list[fileNum])
-			if pygame.mixer.get_busy() == False and startTime :
+		if ( (int(hour) == int(time.strftime("%H")) and int(minute) == int(time.strftime("%M"))) or loopStarted ):
+			loopStarted = True
+			if ( numLoops > 0 and (time.time() - startTime) < downTime*60 ):
+				numLoops-=1
+				pygame.mixer.music.load(dir_list[fileNum])
 				pygame.mixer.music.play(1,0.0)
 				startTime = time.localtime()
+				time.sleep(60)
 			
 			  
