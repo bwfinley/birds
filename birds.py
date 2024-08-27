@@ -322,6 +322,7 @@ while True:
 					currentNum = "0"
 					index = 0
 					mylcd.lcd_display_string("X",2,0)
+					mylcd.lcd_display_string("        ",2,12)
 					mylcd.lcd_display_string("_",2,12)
 					time.sleep(0.1)
 					while numConfirmed == False:
@@ -331,13 +332,15 @@ while True:
 							if lastKey != '#':
 								if currentNum == "0":
 									currentNum = str(lastKey)
-								else: 
+								else:
 									currentNum += str(lastKey)
 								mylcd.lcd_display_string(currentNum,2,12)
-								mylcd.lcd_display_string("_",2,12+index)
 								index+=1
-								time.sleep(0.075)
+								mylcd.lcd_display_string("_",2,12+index)
+								time.sleep(0.1)
 							else:
+								mylcd.lcd_display_string(currentNum,2,12)
+								mylcd.lcd_display_string(" ",2,12+index)
 								numConfirmed = True
 								numLoops = int(currentNum)
 				if cursPos == 1:
@@ -345,23 +348,25 @@ while True:
 					currentNum = "0"
 					index=0
 					mylcd.lcd_display_string("X",3,0)
+					mylcd.lcd_display_string("        ",3,12)
 					mylcd.lcd_display_string("_",3,12)
 					time.sleep(0.1)
 					while numConfirmed == False:
 						keys = keypad.pressed_keys
 						if keys:
 							lastKey = keys[0]
-							if currentNum == "0":
-								currentNum = str(lastKey)
-							else: 
-								currentNum += str(lastKey)
 							if lastKey != "#":
-								currentNum += str(lastKey)
+								if currentNum == "0":
+									currentNum = str(lastKey)
+								else:
+									currentNum += str(lastKey)
 								mylcd.lcd_display_string(currentNum,3,12)
-								mylcd.lcd_display_string("_",3,12+index)
 								index+=1
-								time.sleep(0.075)
+								mylcd.lcd_display_string("_",3,12+index)
+								time.sleep(0.1)
 							else:
+								mylcd.lcd_display_string(currentNum,3,12)
+								mylcd.lcd_display_string(" ",3,12+index)
 								numConfirmed = True
 								downTime = int(currentNum)
 				if cursPos == 2:
