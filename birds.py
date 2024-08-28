@@ -1,6 +1,7 @@
 import I2C_LCD_driver
 import time
 import digitalio
+import configparser
 import board
 import pygame
 import adafruit_matrixkeypad
@@ -41,21 +42,49 @@ soundLength = 0
 alarm = [-1,-1,-1,-1]
 alarmTime = ""
 device = [-1,-1,-1,-1]	
+startTime == 0
 
 #play settings
 numLoops = 1
 downTime = 0
 
+#writes settings to config file
+def saveSettings():
+	config = configparser.ConfigParser()
+	
+	config['General'] = {'alarm_time': alarmTime, 'file': fileNum, 'loops': numLoops, 'down_time': downTime}
+	
+	with open('config.ini', 'w') as configFile:
+		config.write(configFile)
+
+#reads ConfigFile
+def readConfig():
+	global alarmTime, fileNum, numLoops, downTime
+	config = configparser.ConfigParser()
+	
+	config.read('config.ini')
+	alarmTime = config.get('General','alarm_time')
+	alarm[0] = alarmTime[0]
+	alarm[1] = alarmTime[1]
+	alarm[2] = alarmTime[3]
+	alarm[3] = alarmTime[4]
+	fileNum = int(config.get('General','file'))
+	numLoops = int(config.get('General','loops'))
+	downTime = int(config.get('General','down_time'))
+	
+
+
 #prints the main menu screen onto the LCD
 def print_main():
 	global cursBound 
-	cursBound = 2
+	cursBound = 3
 	mylcd.lcd_clear()
 	mylcd.lcd_display_string("B.A.D 2.0",1)
 	mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
 	mylcd.lcd_display_string("Set Time",2,1)
 	mylcd.lcd_display_string("Set Sound",3,1)
 	mylcd.lcd_display_string("Play Settings",4,1)
+	mylcd.lcd_display_string("Save",2,16)
 	
 #prints the time setting screen onto the LCD
 def print_time():
@@ -109,17 +138,26 @@ def refresh_screen(screenChange):
 
 		#prints proper cursor location
 		if cursPos == 0:
-			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(">",2,0)
+			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(" ",4,0)
+			mylcd.lcd_display_string(" ",2,15)
 		if cursPos == 1:
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(">",3,0)
 			mylcd.lcd_display_string(" ",4,0)
+			mylcd.lcd_display_string(" ",2,15)
 		if cursPos == 2:
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(">",4,0)
+			mylcd.lcd_display_string(" ",2,15)
+		if cursPos == 3:
+			mylcd.lcd_display_string(" ",2,0)
+			mylcd.lcd_display_string(" ",3,0)
+			mylcd.lcd_display_string(" ",4,0)
+			mylcd.lcd_display_string(">",2,15)
+			
 			
 	#If the current screen is the time screen
 	if curScreen == 1:
@@ -175,8 +213,9 @@ def refresh_screen(screenChange):
 			mylcd.lcd_display_string(">",4,15)
 		
 			
-
-
+if os.path.isfile('config.ini'):
+	print("read config")
+	readConfig()
 print_main()
 
 #This is the main loop, this is essentially always running
@@ -215,9 +254,12 @@ while True:
 
 			#if on main screen, just transion to selected screen
 			if curScreen == 0:
-				curScreen = cursPos + 1
-				cursPos = 0
-				screenChange = 1
+				if cursPos == 3:
+					saveSettings()
+				else:
+					curScreen = cursPos + 1
+					cursPos = 0
+					screenChange = 1
 	
 			
 			elif curScreen == 1:
@@ -238,9 +280,13 @@ while True:
 							keys = keypad.pressed_keys
 							if keys:
 								if index > 2:
-									alarm[index-1] = keys[0]
+									if index == 3 and keys[0] > 5:
+										continue
+									device[index-1] = keys[0]
 								else:
-									alarm[index] = keys[0] 
+									if index == 0 and keys[0] > 2:
+										continue 
+									device[index] = keys[0]  
 								mylcd.lcd_display_string(str(keys[0]),2,14+index)
 								timeChange = False
 						hour = str(alarm[0]) + str(alarm[1])
@@ -263,8 +309,12 @@ while True:
 							keys = keypad.pressed_keys
 							if keys:
 								if index > 2:
+									if index == 3 and keys[0] > 5:
+										continue
 									device[index-1] = keys[0]
 								else:
+									if index == 0 and keys[0] > 2:
+										continue 
 									device[index] = keys[0] 
 								mylcd.lcd_display_string(str(keys[0]),3,14+index)
 								timeChange = False
