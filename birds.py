@@ -17,6 +17,7 @@ cursPos = 0
 cursBound = 0
 cTime = time.localtime(time.time())
 loopStarted = False
+loopPaused = False
 
 #initialize lcd
 mylcd = I2C_LCD_driver.lcd()
@@ -42,17 +43,18 @@ soundLength = 0
 alarm = [-1,-1,-1,-1]
 alarmTime = ""
 device = [-1,-1,-1,-1]	
-startTime == 0
+startTime = 0
 
 #play settings
 numLoops = 1
+curLoop = numLoops
 downTime = 0
 
 #writes settings to config file
 def saveSettings():
 	config = configparser.ConfigParser()
 	
-	config['General'] = {'alarm_time': alarmTime, 'file': fileNum, 'loops': numLoops, 'down_time': downTime}
+	config['General'] = {'alarm_time': alarmTime, 'file': fileNum, 'loops': numLoops, 'current_loop': curLoop, 'down_time': downTime}
 	
 	with open('config.ini', 'w') as configFile:
 		config.write(configFile)
@@ -70,6 +72,7 @@ def readConfig():
 	alarm[3] = alarmTime[4]
 	fileNum = int(config.get('General','file'))
 	numLoops = int(config.get('General','loops'))
+	curLoop = int(config.get('General','current_loop'))
 	downTime = int(config.get('General','down_time'))
 	
 
@@ -282,11 +285,11 @@ while True:
 								if index > 2:
 									if index == 3 and keys[0] > 5:
 										continue
-									device[index-1] = keys[0]
+									alarm[index-1] = keys[0]
 								else:
 									if index == 0 and keys[0] > 2:
 										continue 
-									device[index] = keys[0]  
+									alarm[index] = keys[0]  
 								mylcd.lcd_display_string(str(keys[0]),2,14+index)
 								timeChange = False
 						hour = str(alarm[0]) + str(alarm[1])
@@ -393,6 +396,7 @@ while True:
 								mylcd.lcd_display_string(" ",2,12+index)
 								numConfirmed = True
 								numLoops = int(currentNum)
+								curLoop = numLoops
 				if cursPos == 1:
 					numConfirmed = False
 					currentNum = "0"
@@ -432,12 +436,19 @@ while True:
 		hour = str(alarm[0])+str(alarm[1])
 		minute = str(alarm[2])+str(alarm[3])
 		if ( (int(hour) == int(time.strftime("%H")) and int(minute) == int(time.strftime("%M"))) or loopStarted ):
-			loopStarted = True
-			if ( numLoops > 0 and (time.time() - startTime) < downTime*60 ):
-				numLoops-=1
+			if pygame.mixer.music.get_busy() == False and loopStarted == True and loopPaused == False:
+				loopPaused = True
+				startTime = time.time()
+				print("Sound Paused")
+			if (pygame.mixer.music.get_busy() == False and curLoop > 0 and ((time.time() - startTime) > downTime*60 or loopStarted == False) ):
+				loopStarted = True
+				loopPaused = False
+				print("Sound Started")
+				curLoop-=1
 				pygame.mixer.music.load(dir_list[fileNum])
-				pygame.mixer.music.play(1,0.0)
-				startTime = time.localtime()
+				pygame.mixer.music.play(0,0.0)
 				time.sleep(60)
-			
+			if curLoop <= 0:
+				curLoop = numLoops
+				loopStarted = False
 			  
