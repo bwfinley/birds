@@ -10,9 +10,10 @@ import subprocess
 #import adafruit_ds3231
 import time
 import datetime
-import board
-
+import RPi.GPIO as GPIO
 import mutagen.mp3
+
+
 
 #globals
 screenChange = 0
@@ -23,6 +24,9 @@ cursBound = 0
 cTime = time.localtime(time.time())
 loopStarted = False
 loopPaused = False
+
+GPIO.setup(0,GPIO.OUT)
+
 
 #initialize lcd
 mylcd = I2C_LCD_driver.lcd()
@@ -846,10 +850,12 @@ while True:
 					loopStarted = True
 					loopPaused = False
 					curLoop-=1
+					GPIO.output(0,GPIO.HIGH)
 					pygame.mixer.music.load(dir_list[fileNum])
 					pygame.mixer.music.play(0,0.0)
 					time.sleep(60)
 				if curLoop <= 0:
+					GPIO.output(0,GPIO.LOW)
 					curLoop = numLoops
 					loopStarted = False
 	else:
