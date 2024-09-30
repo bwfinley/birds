@@ -108,12 +108,18 @@ def print_time():
 	cursBound = 2
 	mylcd.lcd_clear()
 	mylcd.lcd_display_string("Time Settings",1)
-	mylcd.lcd_display_string("Alarm Time",2,1); 
-	mylcd.lcd_display_string("Device Time",3,1); 
-	mylcd.lcd_display_string("Home",4,16)
-	mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
-	if alarm[0] != -1:
-		mylcd.lcd_display_string(alarmTime,2,14)
+	if startDate == 0:
+		mylcd.lcd_display_string("Alarm Time",2,1); 
+		mylcd.lcd_display_string("Device Time",3,1); 
+		mylcd.lcd_display_string("Home",4,16)
+		mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
+		if alarm[0] != -1:
+			mylcd.lcd_display_string(alarmTime,2,14)
+	else:
+		mylcd.lcd_display_string("Set Cycle times",2,1)
+		mylcd.lcd_display_string("Device Time",3,1); 
+		mylcd.lcd_display_string("Home",4,16); 
+
 		
 #prints the sound settings screen onto the LCD
 def print_sound():
@@ -122,12 +128,16 @@ def print_sound():
 	mylcd.lcd_clear()
 	mylcd.lcd_display_string("Sound Settings",1)
 	global currentFile
-	if fileNum == -1:
-		mylcd.lcd_display_string("File",2,1)
+	if startDate == 0:
+		if fileNum == -1:
+			mylcd.lcd_display_string("File",2,1)
+		else:
+			mylcd.lcd_display_string(dir_list[fileNum],2,1)
+		mylcd.lcd_display_string("Test Audio",3,1)
+		mylcd.lcd_display_string("Home",4,16)
 	else:
-		mylcd.lcd_display_string(dir_list[fileNum],2,1)
-	mylcd.lcd_display_string("Test Audio",3,1)
-	mylcd.lcd_display_string("Home",4,16)
+		mylcd.lcd_display_string("Set Cycle sounds",2,1)
+		mylcd.lcd_display_string("Home",4,16)
 	
 def print_play():
 	global numLoops
@@ -135,12 +145,16 @@ def print_play():
 	cursBound = 3
 	mylcd.lcd_clear()
 	mylcd.lcd_display_string("Play Settings",1,1)
-	mylcd.lcd_display_string("Loops",2,1)
-	mylcd.lcd_display_string(str(numLoops),2,12)
-	mylcd.lcd_display_string("Down Time",3,1)
-	mylcd.lcd_display_string(str(downTime),3,12)
-	mylcd.lcd_display_string("Schedule",4,1)
-	mylcd.lcd_display_string("Home",4,16)
+	if startDate == 0:
+		mylcd.lcd_display_string("Loops",2,1)
+		mylcd.lcd_display_string(str(numLoops),2,12)
+		mylcd.lcd_display_string("Down Time",3,1)
+		mylcd.lcd_display_string(str(downTime),3,12)
+		mylcd.lcd_display_string("Schedule",4,1)
+		mylcd.lcd_display_string("Home",4,16)
+	else:
+		mylcd.lcd_display_string("Set Cycle Loops")
+		mylcd.lcd_display_string("Home",4,16)
 
 def print_schedule():
 	global startDate
@@ -165,7 +179,6 @@ def refresh_screen(screenChange):
 		if screenChange == 1:
 			print_main()
 		mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
-
 		#prints proper cursor location
 		if cursPos == 0:
 			mylcd.lcd_display_string(">",2,0)
@@ -287,6 +300,7 @@ def refresh_screen(screenChange):
 if os.path.isfile('config.ini'):
 	print("read config")
 	readConfig()
+
 print_main()
 
 #This is the main loop, this is essentially always running
@@ -595,13 +609,15 @@ while True:
 							mylcd.lcd_display_string(" ",3,12+index)
 							numConfirmed = True
 							numCycles = int(currentNum)
+				if cursPos == 4:
+					startDate = 0
+					numCycles = 0
+					numLoops = 0
 				if cursPos == 3:
 					curScreen = 3
 					cursPos = 0
 					screenChange = 1
 				
-
-
 		time.sleep(0.1)
 		
 	#Check if the current time is equal to the alarm time
@@ -613,11 +629,9 @@ while True:
 			if pygame.mixer.music.get_busy() == False and loopStarted == True and loopPaused == False:
 				loopPaused = True
 				startTime = time.time()
-				print("Sound Paused")
 			if (pygame.mixer.music.get_busy() == False and curLoop > 0 and ((time.time() - startTime) > downTime*60 or loopStarted == False) ):
 				loopStarted = True
 				loopPaused = False
-				print("Sound Started")
 				curLoop-=1
 				pygame.mixer.music.load(dir_list[fileNum])
 				pygame.mixer.music.play(0,0.0)
