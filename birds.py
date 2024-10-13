@@ -854,8 +854,8 @@ while True:
 					loopStarted = False
 	else:
 		if currentCycle < numCycles:
-			hour = alarmTimes[curLoop][0]
-			minute = alarmTimes[curLoop][1]
+			hour = alarmTimes[currentCycle][0]
+			minute = alarmTimes[currentCycle][1]
 			if( int(hour) == int(time.strftime("%H")) and int(minute) == int(time.strftime("%M")) or loopStarted):
 				if pygame.mixer.music.get_busy() == False and loopStarted == True and loopPaused == False:
 					loopPaused = True
@@ -864,10 +864,12 @@ while True:
 					loopStarted = True
 					loopPaused = False
 					curLoop-=1
-					pygame.mixer.music.load(dir_list[fileNum])
+					pygame.mixer.music.load(dir_list[sounds[currentCycle]])
 					pygame.mixer.music.play(0,0.0)
 					time.sleep(60)
 				if curLoop <= 0:
-					curLoop = numLoops
+					currentCycle+=1
+					curLoop = loops[currentCycle][0]
+					downTime = loops[currentCycle][1]
 					loopStarted = False
 
