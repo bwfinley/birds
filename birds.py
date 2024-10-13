@@ -72,12 +72,14 @@ currentCycle = 0
 
 def setTimeForCycle():
 	global alarmTimes
+	alarmTimes = []
 	cycle = 1
 	tempAlarm = [-1,-1,-1,-1]
 	while cycle <= numCycles:
 		mylcd.lcd_clear()
 		mylcd.lcd_display_string("X",2,0)
 		mylcd.lcd_display_string("Time for Cycle " + str(cycle),1)
+		mylcd.lcd_display_string("00:00",2,1)
 		index = 0
 		timeChange = False
 		while index<5:
@@ -99,19 +101,26 @@ def setTimeForCycle():
 					timeChange = False
 			time.sleep(0.1)
 			index += 1
-		hour = str(alarm[0]) + str(alarm[1])
-		minutes = str(alarm[2]) + str(alarm[3])
-		alarmTimes[cycle-1] = [hour,minutes]
+		hour = str(tempAlarm[0]) + str(tempAlarm[1])
+		minutes = str(tempAlarm[2]) + str(tempAlarm[3])
+		alarmTimes.append([hour,minutes])
 		cycle+=1
+	curScreen = 2
+	cursPos = 0
+	refresh_screen(1)
 		
 	
 
-def setSoundForCycle(cycles,cycleNum):
+def setSoundForCycle():
 	global sounds
+	sounds = []
 	cycle = 1
 	while cycle <= numCycles:
 		mylcd.lcd_clear()
 		mylcd.lcd_display_string("Sound for Cycle " + str(cycle),1)
+		mylcd.lcd_display_string("X",2,0)
+		fileChange = 1
+		fileNum = 0
 		while fileChange == 1:
 			keys = keypad.pressed_keys
 			if keys:
@@ -132,18 +141,22 @@ def setSoundForCycle(cycles,cycleNum):
 				fileNum = len(dir_list) - 1
 			mylcd.lcd_display_string(dir_list[fileNum],2,1)
 			time.sleep(0.05)
-		sounds[cycle - 1] = fileNum
+		sounds.append(fileNum)
 		cycle+=1
-
+	curScreen = 3
+	cursPos = 0
+	refresh_screen(1)
+	
 def setLoopsForCycle():
 	global loops
+	loops = []
 	cycle = 1	
 	while cycle <= numCycles:
 		settingsPair = []
 		mylcd.lcd_clear()
 		mylcd.lcd_display_string("Num Loops ",2,1)
-		mylcd.lcd_display_string("Down Time ",2,1)
-		mylcd.lcd_display_string("Play Set. for cycle " + str(cycle),1)
+		mylcd.lcd_display_string("Down Time ",3,1)
+		mylcd.lcd_display_string("Play Set. for cyc." + str(cycle),1)
 		numConfirmed = False
 		currentNum = "0"
 		index=0
@@ -167,33 +180,37 @@ def setLoopsForCycle():
 					mylcd.lcd_display_string(currentNum,2,11)
 					mylcd.lcd_display_string(" ",2,11+index)
 					numConfirmed = True
-					settingsPair[0] = int(currentNum)
-			numConfirmed = False
-			currentNum = "0"
-			index=0
-			mylcd.lcd_display_string("X",3,0)
-			mylcd.lcd_display_string("_",3,11)
-			time.sleep(0.1)
-			while numConfirmed == False:
-				keys = keypad.pressed_keys
-				if keys:
-					lastKey = keys[0]
-					if lastKey != "#":
-						if currentNum == "0":
-							currentNum = str(lastKey)
-						else:
-							currentNum += str(lastKey)
-						mylcd.lcd_display_string(currentNum,3,11)
-						index+=1
-						mylcd.lcd_display_string("_",3,11+index)
-						time.sleep(0.1)
+					settingsPair.append(int(currentNum))
+		numConfirmed = False
+		currentNum = "0"
+		index=0
+		mylcd.lcd_display_string(" ",2,0)
+		mylcd.lcd_display_string("X",3,0)
+		mylcd.lcd_display_string("_",3,11)
+		time.sleep(0.1)
+		while numConfirmed == False:
+			keys = keypad.pressed_keys
+			if keys:
+				lastKey = keys[0]
+				if lastKey != "#":
+					if currentNum == "0":
+						currentNum = str(lastKey)
 					else:
-						mylcd.lcd_display_string(currentNum,3,12)
-						mylcd.lcd_display_string(" ",3,12+index)
-						numConfirmed = True
-						settingsPair[1] = int(currentNum)
-			loops[cycle-1] = settingsPair
-			cycle+=1
+						currentNum += str(lastKey)
+					mylcd.lcd_display_string(currentNum,3,11)
+					index+=1
+					mylcd.lcd_display_string("_",3,11+index)
+					time.sleep(0.1)
+				else:
+					mylcd.lcd_display_string(currentNum,3,12)
+					mylcd.lcd_display_string(" ",3,12+index)
+					numConfirmed = True
+					settingsPair.append(int(currentNum))
+		loops.append(settingsPair)
+		cycle+=1
+	curScreen = 4
+	cursPos = 0
+	refresh_screen(1)
 			
 
 #writes settings to config file
@@ -280,6 +297,7 @@ def print_play():
 	mylcd.lcd_clear()
 	mylcd.lcd_display_string("Play Settings",1,1)
 	if startDate == 0:
+		cursBound = 4
 		mylcd.lcd_display_string("Loops",2,1)
 		mylcd.lcd_display_string(str(numLoops),2,12)
 		mylcd.lcd_display_string("Down Time",3,1)
@@ -287,8 +305,9 @@ def print_play():
 		mylcd.lcd_display_string("Schedule",4,1)
 		mylcd.lcd_display_string("Home",4,16)
 	else:
+		cursBound = 2
 		mylcd.lcd_display_string("Set Cycle Loops",2,1)
-		mylcd.lcd_display_string("Schedule",2,2)
+		mylcd.lcd_display_string("Schedule",3,1)
 		mylcd.lcd_display_string("Home",4,16)
 
 def print_schedule():
@@ -343,37 +362,45 @@ def refresh_screen(screenChange):
 		if screenChange == 1:
 			print_time()
 		mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
-		if startDate == 0:
-			if cursPos == 0:
-				mylcd.lcd_display_string(" ",3,0)
-				mylcd.lcd_display_string(" ",4,15)
-				mylcd.lcd_display_string(">",2,0)
-			if cursPos == 1:
-				mylcd.lcd_display_string(" ",4,15)
-				mylcd.lcd_display_string(" ",2,0)
-				mylcd.lcd_display_string(">",3,0)
-			if cursPos == 2:
-				mylcd.lcd_display_string(" ",2,0)
-				mylcd.lcd_display_string(" ",3,0)
-				mylcd.lcd_display_string(">",4,15)
-
-	#If the current screen is the sound screen
-	if curScreen == 2:
-		if screenChange == 1:
-			print_sound()
-		mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
 		if cursPos == 0:
-			mylcd.lcd_display_string(">",2,0)
 			mylcd.lcd_display_string(" ",3,0)
-			mylcd.lcd_display_string(" ",4,15)	
+			mylcd.lcd_display_string(" ",4,15)
+			mylcd.lcd_display_string(">",2,0)
 		if cursPos == 1:
+			mylcd.lcd_display_string(" ",4,15)
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(">",3,0)
-			mylcd.lcd_display_string(" ",4,15)
 		if cursPos == 2:
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(">",4,15)
+
+	#If the current screen is the sound screen
+	if curScreen == 2:
+		if screenChange == 1:
+				print_sound()
+		if startDate == 0:
+			mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
+			if cursPos == 0:
+				mylcd.lcd_display_string(">",2,0)
+				mylcd.lcd_display_string(" ",3,0)
+				mylcd.lcd_display_string(" ",4,15)	
+			if cursPos == 1:
+				mylcd.lcd_display_string(" ",2,0)
+				mylcd.lcd_display_string(">",3,0)
+				mylcd.lcd_display_string(" ",4,15)
+			if cursPos == 2:
+				mylcd.lcd_display_string(" ",2,0)
+				mylcd.lcd_display_string(" ",3,0)
+				mylcd.lcd_display_string(">",4,15)
+		else:
+			if cursPos == 0:
+				mylcd.lcd_display_string(">",2,0)
+				mylcd.lcd_display_string(" ",4,15)	
+			if cursPos == 1:
+				mylcd.lcd_display_string(" ",2,0)
+				mylcd.lcd_display_string(">",4,15)
+			
 			
 	#if the current screen is the play screen
 	if curScreen == 3:
@@ -447,6 +474,7 @@ def refresh_screen(screenChange):
 			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(" ",4,0)
 			mylcd.lcd_display_string(">",4,15)
+	
 			
 if os.path.isfile('config.ini'):
 	print("read config")
@@ -502,34 +530,38 @@ while True:
 
 				#set Alarm Time
 				if cursPos == 0:
-					index = 0
-					mylcd.lcd_display_string("X",2,0)#change cursor to an X
-					mylcd.lcd_display_string("00:00",2,14)#display time
-					time.sleep(0.1)
-
-					#Loops untill 4 digits are input as the time
-					while index<5:
-						if index != 2:
-							timeChange = True
-						while timeChange:
-							mylcd.lcd_display_string("_",2,14+index)
-							keys = keypad.pressed_keys
-							if keys:
-								if index > 2:
-									if index == 3 and keys[0] > 5:
-										continue
-									alarm[index-1] = keys[0]
-								else:
-									if index == 0 and keys[0] > 2:
-										continue 
-									alarm[index] = keys[0]  
-								mylcd.lcd_display_string(str(keys[0]),2,14+index)
-								timeChange = False
-						hour = str(alarm[0]) + str(alarm[1])
-						minutes = str(alarm[2]) + str(alarm[3])
-						alarmTime = hour+":"+minutes
+					if startDate == 0:
+						index = 0
+						mylcd.lcd_display_string("X",2,0)#change cursor to an X
+						mylcd.lcd_display_string("00:00",2,14)#display time
 						time.sleep(0.1)
-						index += 1
+
+						#Loops untill 4 digits are input as the time
+						while index<5:
+							if index != 2:
+								timeChange = True
+							while timeChange:
+								mylcd.lcd_display_string("_",2,14+index)
+								
+								keys = keypad.pressed_keys
+								if keys:
+									if index > 2:
+										if index == 3 and keys[0] > 5:
+											continue
+										alarm[index-1] = keys[0]
+									else:
+										if index == 0 and keys[0] > 2:
+											continue 
+										alarm[index] = keys[0]  
+									mylcd.lcd_display_string(str(keys[0]),2,14+index)
+									timeChange = False
+							hour = str(alarm[0]) + str(alarm[1])
+							minutes = str(alarm[2]) + str(alarm[3])
+							alarmTime = hour+":"+minutes
+							time.sleep(0.1)
+							index += 1
+					else:
+						setTimeForCycle()
 
 				#Sets the device time		
 				if cursPos == 1: 
@@ -569,33 +601,41 @@ while True:
 			#file selection logic		
 			elif curScreen == 2:
 				if cursPos == 0:
-					fileChange = 1
-					mylcd.lcd_display_string("X",2,0)
-					time.sleep(0.1)
-					while fileChange == 1:
-						keys = keypad.pressed_keys
-						if keys:
-							lastKey = keys[0]
-							if lastKey == 6:
-								mylcd.lcd_display_string("                          ",2,1)	
-								fileNum += 1
-								
-							elif lastKey == 4:
-								mylcd.lcd_display_string("                          ",2,1)	
-								fileNum -= 1
-								
-							elif lastKey == 5:
-								fileChange = 0
-						if fileNum == len(dir_list):
-							fileNum = 0
-						if fileNum < 0:
-							fileNum = len(dir_list) - 1
-						mylcd.lcd_display_string(dir_list[fileNum],2,1)
-						time.sleep(0.05)
-						
+					if startDate == 0:
+						fileChange = 1
+						mylcd.lcd_display_string("X",2,0)
+						time.sleep(0.1)
+						while fileChange == 1:
+							keys = keypad.pressed_keys
+							if keys:
+								lastKey = keys[0]
+								if lastKey == 6:
+									mylcd.lcd_display_string("                          ",2,1)	
+									fileNum += 1
+									
+								elif lastKey == 4:
+									mylcd.lcd_display_string("                          ",2,1)	
+									fileNum -= 1
+									
+								elif lastKey == 5:
+									fileChange = 0
+							if fileNum == len(dir_list):
+								fileNum = 0
+							if fileNum < 0:
+								fileNum = len(dir_list) - 1
+							mylcd.lcd_display_string(dir_list[fileNum],2,1)
+							time.sleep(0.05)
+					else:
+						setSoundForCycle()
+							
 				if cursPos == 1:
-					pygame.mixer.music.load("test.mp3")
-					pygame.mixer.music.play(0,0.0)
+					if startDate == 0:
+						pygame.mixer.music.load("test.mp3")
+						pygame.mixer.music.play(0,0.0)
+					else:
+						curScreen = 0
+						cursPos = 0
+						screenChange = 1
 				if cursPos == 2:
 					curScreen = 0
 					cursPos = 0
@@ -604,62 +644,75 @@ while True:
 			elif curScreen == 3:
 				
 				if cursPos == 0:
-					numConfirmed = False
-					currentNum = "0"
-					index = 0
-					mylcd.lcd_display_string("X",2,0)
-					mylcd.lcd_display_string("        ",2,12)
-					mylcd.lcd_display_string("_",2,12)
-					time.sleep(0.1)
-					while numConfirmed == False:
-						keys = keypad.pressed_keys
-						if keys:
-							lastKey = keys[0]
-							if lastKey != '#':
-								if currentNum == "0":
-									currentNum = str(lastKey)
+					if startDate == 0:
+						numConfirmed = False
+						currentNum = "0"
+						index = 0
+						mylcd.lcd_display_string("X",2,0)
+						mylcd.lcd_display_string("        ",2,12)
+						mylcd.lcd_display_string("_",2,12)
+						time.sleep(0.1)
+						while numConfirmed == False:
+							keys = keypad.pressed_keys
+							if keys:
+								lastKey = keys[0]
+								if lastKey != '#':
+									if currentNum == "0":
+										currentNum = str(lastKey)
+									else:
+										currentNum += str(lastKey)
+									mylcd.lcd_display_string(currentNum,2,12)
+									index+=1
+									mylcd.lcd_display_string("_",2,12+index)
+									time.sleep(0.1)
 								else:
-									currentNum += str(lastKey)
-								mylcd.lcd_display_string(currentNum,2,12)
-								index+=1
-								mylcd.lcd_display_string("_",2,12+index)
-								time.sleep(0.1)
-							else:
-								mylcd.lcd_display_string(currentNum,2,12)
-								mylcd.lcd_display_string(" ",2,12+index)
-								numConfirmed = True
-								numLoops = int(currentNum)
-								curLoop = numLoops
+									mylcd.lcd_display_string(currentNum,2,12)
+									mylcd.lcd_display_string(" ",2,12+index)
+									numConfirmed = True
+									numLoops = int(currentNum)
+									curLoop = numLoops
+					else:
+						setLoopsForCycle()
 				if cursPos == 1:
-					numConfirmed = False
-					currentNum = "0"
-					index=0
-					mylcd.lcd_display_string("X",3,0)
-					mylcd.lcd_display_string("        ",3,12)
-					mylcd.lcd_display_string("_",3,12)
-					time.sleep(0.1)
-					while numConfirmed == False:
-						keys = keypad.pressed_keys
-						if keys:
-							lastKey = keys[0]
-							if lastKey != "#":
-								if currentNum == "0":
-									currentNum = str(lastKey)
+					if startDate == 0:
+						numConfirmed = False
+						currentNum = "0"
+						index=0
+						mylcd.lcd_display_string("X",3,0)
+						mylcd.lcd_display_string("        ",3,12)
+						mylcd.lcd_display_string("_",3,12)
+						time.sleep(0.1)
+						while numConfirmed == False:
+							keys = keypad.pressed_keys
+							if keys:
+								lastKey = keys[0]
+								if lastKey != "#":
+									if currentNum == "0":
+										currentNum = str(lastKey)
+									else:
+										currentNum += str(lastKey)
+									mylcd.lcd_display_string(currentNum,3,12)
+									index+=1
+									mylcd.lcd_display_string("_",3,12+index)
+									time.sleep(0.1)
 								else:
-									currentNum += str(lastKey)
-								mylcd.lcd_display_string(currentNum,3,12)
-								index+=1
-								mylcd.lcd_display_string("_",3,12+index)
-								time.sleep(0.1)
-							else:
-								mylcd.lcd_display_string(currentNum,3,12)
-								mylcd.lcd_display_string(" ",3,12+index)
-								numConfirmed = True
-								downTime = int(currentNum)
+									mylcd.lcd_display_string(currentNum,3,12)
+									mylcd.lcd_display_string(" ",3,12+index)
+									numConfirmed = True
+									downTime = int(currentNum)
+					else:
+						curScreen = 4
+						cursPos = 0
+						screenChange = 1		
 				if cursPos == 2:
-					curScreen = 4
-					cursPos = 0
-					screenChange = 1
+					if startDate == 0:
+						curScreen = 4
+						cursPos = 0
+						screenChange = 1
+					else:
+						curScreen = 0
+						cursPos = 0
+						screenChange = 1
 				if cursPos == 3:
 					curScreen = 0
 					cursPos = 0
@@ -690,7 +743,6 @@ while True:
 										continue
 									month *= 10
 									month += keys[0]
-									print(month)
 								elif index > 2 and index < 5:
 									if index == 3 and keys[0] > 2 and month == 2:
 										continue
@@ -704,11 +756,9 @@ while True:
 										continue
 									day *= 10
 									day += keys[0]
-									print(day)
 								elif index > 5:
 									year *= 10
 									year += keys[0]
-									print(year)
 								mylcd.lcd_display_string(str(keys[0]),1,12+index)
 								dateChange = False
 						time.sleep(0.1)
