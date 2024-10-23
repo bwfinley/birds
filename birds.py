@@ -7,12 +7,11 @@ import pygame
 import adafruit_matrixkeypad
 import os
 import subprocess
-#import adafruit_ds3231
+import adafruit_ds3231
 import time
 import datetime
 import RPi.GPIO as GPIO
 import mutagen.mp3
-
 
 
 #globals
@@ -27,6 +26,10 @@ loopPaused = False
 
 GPIO.setup(0,GPIO.OUT)
 
+#rtc initializatoin
+i2c = board.I2C()
+rtc = adafruit_ds3231.DS3231(i2c)
+sudodate = subprocess.Popen(["sudo","date","-s",rtc.datetime])
 
 #initialize lcd
 mylcd = I2C_LCD_driver.lcd()
@@ -47,14 +50,9 @@ currentFile = ""
 fileNum = -1
 soundLength = 0
 
-#rtc initializatoin
-#i2c = board.I2C()
-#rtc = adafruit_ds3231.DS3231(i2c)
-
 #Date and times
 alarm = [-1,-1,-1,-1]
 alarmTime = ""
-
 device = [-1,-1,-1,-1]	
 startTime = 0
 
@@ -592,9 +590,47 @@ while True:
 								timeChange = False
 						time.sleep(0.1)
 						index += 1
+					mylcd.lcd_display_string(">",4,11)
+					month = 0
+					day = 0
+					year = 0
+					while index < 8:
+						if index != 2 and index != 5:
+							dateChange = True
+						while dateChange:
+							mylcd.lcd_display_string("_",4,12+index)
+							keys = keypad.pressed_keys
+							if keys:
+								if index < 2:
+									if index == 0 and keys[0] > 1:
+										continue
+									if index == 1 and keys[0] > 2:
+										continue
+									month *= 10
+									month += keys[0]
+								elif index > 2 and index < 5:
+									if index == 3 and keys[0] > 2 and month == 2:
+										continue
+									if index == 3 and keys[0] > 3:
+										continue
+									if index == 4 and month == 2 and keys[0] > 8:
+										continue
+									if index == 4 and {4,6,9,11}.__contains__(month) and day == 3 and keys[0] > 0:
+										continue
+									if index == 4 and {1,3,5,7,8,10,12}.__contains__(month) and day == 3 and keys[0] > 1:
+										continue
+									day *= 10
+									day += keys[0]
+								elif index > 5:
+									year *= 10
+									year += keys[0]
+								mylcd.lcd_display_string(str(keys[0]),4,12+index)
+								dateChange = False
+							time.sleep(0.1)
+							index += 1
 					hour = str(device[0])+str(device[1])
 					minutes = str(device[2]) + str(device[3])
-					set_string = "2024-9-30 "+hour+":"+minutes+":0"
+					set_string = str(year)+"-"+str(month)+"-"+str(day)+hour+":"+minutes+":0"
 					sudodate = subprocess.Popen(["sudo","date","-s",set_string])
 						
 				if cursPos == 2:
@@ -767,6 +803,7 @@ while True:
 								dateChange = False
 						time.sleep(0.1)
 						index += 1
+					
 					startDate = datetime.date(2000+year,month,day)
 				
 				if cursPos == 1:
@@ -850,12 +887,10 @@ while True:
 					loopStarted = True
 					loopPaused = False
 					curLoop-=1
-					GPIO.output(0,GPIO.HIGH)
 					pygame.mixer.music.load(dir_list[fileNum])
 					pygame.mixer.music.play(0,0.0)
 					time.sleep(60)
 				if curLoop <= 0:
-					GPIO.output(0,GPIO.LOW)
 					curLoop = numLoops
 					loopStarted = False
 	else:
@@ -877,5 +912,6 @@ while True:
 					currentCycle+=1
 					curLoop = loops[currentCycle][0]
 					downTime = loops[currentCycle][1]
+					curLoop = numLoops
 					loopStarted = False
 
