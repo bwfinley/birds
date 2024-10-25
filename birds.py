@@ -25,14 +25,17 @@ loopStarted = False
 loopPaused = False
 
 GPIO.setup(0,GPIO.OUT)
+GPIO.output(0,GPIO.LOW)
+
+#initialize lcd
+mylcd = I2C_LCD_driver.lcd()
 
 #rtc initializatoin
 i2c = board.I2C()
 rtc = adafruit_ds3231.DS3231(i2c)
-sudodate = subprocess.Popen(["sudo","date","-s",rtc.datetime])
-
-#initialize lcd
-mylcd = I2C_LCD_driver.lcd()
+rtcTime = rtc.datetime
+time_string = str(rtcTime.tm_year)+"-"+str(rtcTime.tm_mon)+"-"+str(rtcTime.tm_mday)+" "+str(rtcTime.tm_hour)+":"+str(rtcTime.tm_min)+":0"
+sudodate = subprocess.Popen(["sudo","date","-s",time_string])
 
 #initialize keypad
 cols = [digitalio.DigitalInOut(x) for x in (board.D5,board.D6, board.D13)]
@@ -590,15 +593,18 @@ while True:
 								timeChange = False
 						time.sleep(0.1)
 						index += 1
-					mylcd.lcd_display_string(">",4,11)
+					mylcd.lcd_display_string("                   ",3,1)
+					mylcd.lcd_display_string("Date 00/00/00",3,1)
+					index = 0
 					month = 0
 					day = 0
 					year = 0
+					dateChange = False
 					while index < 8:
 						if index != 2 and index != 5:
 							dateChange = True
 						while dateChange:
-							mylcd.lcd_display_string("_",4,12+index)
+							mylcd.lcd_display_string("_",3,6+index)
 							keys = keypad.pressed_keys
 							if keys:
 								if index < 2:
@@ -624,14 +630,16 @@ while True:
 								elif index > 5:
 									year *= 10
 									year += keys[0]
-								mylcd.lcd_display_string(str(keys[0]),4,12+index)
+								mylcd.lcd_display_string(str(keys[0]),3,6+index)
 								dateChange = False
-							time.sleep(0.1)
-							index += 1
+						time.sleep(0.1)
+						index += 1
 					hour = str(device[0])+str(device[1])
 					minutes = str(device[2]) + str(device[3])
-					set_string = str(year)+"-"+str(month)+"-"+str(day)+hour+":"+minutes+":0"
+					year = 2000 + year
+					set_string = str(year)+"-"+str(month)+"-"+str(day)+" "+hour+":"+minutes+":0"
 					sudodate = subprocess.Popen(["sudo","date","-s",set_string])
+					rtc.datetime = time.struct_time((year,month,day,int(hour),int(minutes),0,0,0,-1))
 						
 				if cursPos == 2:
 					curScreen = 0
@@ -768,7 +776,7 @@ while True:
 					year = 0
 					time.sleep(0.1)
 
-					#Loops untill 4 digits are input as the time
+
 					while index < 8:
 						if index != 2 and index != 5:
 							dateChange = True
@@ -875,7 +883,7 @@ while True:
 		
 	#Check if the current time is equal to the alarm time
 	#If it is, play audio
-	if startDate != 0:
+	if startDate == 0:
 		if alarm[0] != -1 and fileNum != -1:
 			hour = str(alarm[0])+str(alarm[1])
 			minute = str(alarm[2])+str(alarm[3])
@@ -887,10 +895,12 @@ while True:
 					loopStarted = True
 					loopPaused = False
 					curLoop-=1
+					GPIO.output(0,GPIO.HIGH)
 					pygame.mixer.music.load(dir_list[fileNum])
 					pygame.mixer.music.play(0,0.0)
 					time.sleep(60)
 				if curLoop <= 0:
+					GPIO.output(0,GPIO.LOW)
 					curLoop = numLoops
 					loopStarted = False
 	else:
@@ -914,4 +924,3 @@ while True:
 					downTime = loops[currentCycle][1]
 					curLoop = numLoops
 					loopStarted = False
-
