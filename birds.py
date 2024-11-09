@@ -248,14 +248,15 @@ def readConfig():
 #prints the main menu screen onto the LCD
 def print_main():
 	global cursBound 
-	cursBound = 3
+	cursBound = 4 
 	mylcd.lcd_clear()
-	mylcd.lcd_display_string("B.A.D 2.0",1)
+	mylcd.lcd_display_string("This Worked",1)
 	mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
 	mylcd.lcd_display_string("Set Time",2,1)
 	mylcd.lcd_display_string("Set Sound",3,1)
 	mylcd.lcd_display_string("Play Settings",4,1)
 	mylcd.lcd_display_string("Save",2,16)
+	mylcd.lcd_display_string("Update",3,14)
 	
 #prints the time setting screen onto the LCD
 def print_time():
@@ -345,21 +346,32 @@ def refresh_screen(screenChange):
 			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(" ",4,0)
 			mylcd.lcd_display_string(" ",2,15)
+			mylcd.lcd_display_string(" ",3,13)
 		if cursPos == 1:
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(">",3,0)
 			mylcd.lcd_display_string(" ",4,0)
 			mylcd.lcd_display_string(" ",2,15)
+			mylcd.lcd_display_string(" ",3,13)
 		if cursPos == 2:
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(">",4,0)
 			mylcd.lcd_display_string(" ",2,15)
+			mylcd.lcd_display_string(" ",3,13)
 		if cursPos == 3:
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(" ",4,0)
 			mylcd.lcd_display_string(">",2,15)
+			mylcd.lcd_display_string(" ",3,13)
+		if cursPos == 4:
+			mylcd.lcd_display_string(" ",2,0)
+			mylcd.lcd_display_string(" ",3,0)
+			mylcd.lcd_display_string(" ",4,0)
+			mylcd.lcd_display_string(" ",2,15)
+			mylcd.lcd_display_string(">",3,13)
+			
 			
 			
 	#If the current screen is the time screen
@@ -479,8 +491,38 @@ def refresh_screen(screenChange):
 			mylcd.lcd_display_string(" ",3,0)
 			mylcd.lcd_display_string(" ",4,0)
 			mylcd.lcd_display_string(">",4,15)
-	
-			
+
+def update():
+		path = '/media/birdistheword'
+		if not os.path.exists(path):
+			mylcd.lcd_clear()
+			mylcd.lcd_display_string("No USB Drive")
+			time.sleep(5)
+			print_main()
+			return
+		drives = [os.path.join(path, d) for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
+		if not drives:
+			mylcd.lcd_clear()
+			mylcd.lcd_display_string("No USB Drive")
+			time.sleep(5)
+			print_main()
+			return
+		file_path = ""
+		for drive in drives:
+			for root, dirs, files in os.walk(drive):
+				if 'birds.py' in files:
+					file_path = os.path.join(root,'birds.py')
+					break;
+		if file_path == "":
+			mylcd.lcd_clear()
+			mylcd.lcd_display_string("No birds.py")
+			time.sleep(5)
+			print_main()
+			return
+		with open(file_path, 'r') as src:
+			with open('/home/birdistheword/birds-git/birds', 'w') as dest:
+				shutil.copyfileobj(src,dest)
+				
 if os.path.isfile('config.ini'):
 	print("read config")
 	readConfig()
@@ -525,6 +567,8 @@ while True:
 			if curScreen == 0:
 				if cursPos == 3:
 					saveSettings()
+				elif cursPos == 4:
+					update()
 				else:
 					curScreen = cursPos + 1
 					cursPos = 0
