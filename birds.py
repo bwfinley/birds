@@ -250,7 +250,7 @@ def print_main():
 	global cursBound 
 	cursBound = 4 
 	mylcd.lcd_clear()
-	mylcd.lcd_display_string("This Worked",1)
+	mylcd.lcd_display_string("B.A.D 2.0",1)
 	mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
 	mylcd.lcd_display_string("Set Time",2,1)
 	mylcd.lcd_display_string("Set Sound",3,1)
