@@ -26,6 +26,8 @@ loopPaused = False
 
 GPIO.setup(0,GPIO.OUT)
 GPIO.output(0,GPIO.LOW)
+GPIO.setup(1,GPIO.IN)
+inputMode = False
 
 #initialize lcd
 mylcd = I2C_LCD_driver.lcd()
@@ -261,12 +263,17 @@ def print_main():
 #prints the time setting screen onto the LCD
 def print_time():
 	global cursBound 
-	cursBound = 2
+	cursBound = 3
 	mylcd.lcd_clear()
 	mylcd.lcd_display_string("Time Settings",1)
 	if startDate == 0:
 		mylcd.lcd_display_string("Alarm Time",2,1) 
 		mylcd.lcd_display_string("Device Time",3,1) 
+		if inputMode == False:
+			mylcd.lcd_display_string("Input mode on",4,1)
+		else:
+			mylcd.lcd_display_string("Input mode off",4,1)
+		mylcd.lcd_display_string("Enable")
 		mylcd.lcd_display_string("Home",4,16)
 		mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
 		if alarm[0] != -1:
@@ -401,14 +408,22 @@ def refresh_screen(screenChange):
 			if cursPos == 0:
 				mylcd.lcd_display_string(">",2,0)
 				mylcd.lcd_display_string(" ",3,0)
+				mylcd.lcd_display_string(" ",4,0)
 				mylcd.lcd_display_string(" ",4,15)	
 			if cursPos == 1:
 				mylcd.lcd_display_string(" ",2,0)
 				mylcd.lcd_display_string(">",3,0)
+				mylcd.lcd_display_string(" ",4,0)
 				mylcd.lcd_display_string(" ",4,15)
 			if cursPos == 2:
 				mylcd.lcd_display_string(" ",2,0)
 				mylcd.lcd_display_string(" ",3,0)
+				mylcd.lcd_display_string(">",4,0)
+				mylcd.lcd_display_string(" ",4,15)
+			if cursPos == 3:
+				mylcd.lcd_display_string(" ",2,0)
+				mylcd.lcd_display_string(" ",3,0)
+				mylcd.lcd_display_string(" ",4,0)
 				mylcd.lcd_display_string(">",4,15)
 		else:
 			if cursPos == 0:
@@ -512,7 +527,7 @@ def update():
 			for root, dirs, files in os.walk(drive):
 				if 'birds.py' in files:
 					file_path = os.path.join(root,'birds.py')
-					break;
+					break
 		if file_path == "":
 			mylcd.lcd_clear()
 			mylcd.lcd_display_string("No birds.py")
@@ -684,8 +699,11 @@ while True:
 					set_string = str(year)+"-"+str(month)+"-"+str(day)+" "+hour+":"+minutes+":0"
 					sudodate = subprocess.Popen(["sudo","date","-s",set_string])
 					rtc.datetime = time.struct_time((year,month,day,int(hour),int(minutes),0,0,0,-1))
-						
-				if cursPos == 2:
+
+				if cursPos == 2:		
+					inputMode = not inputMode
+
+				if cursPos == 3:
 					curScreen = 0
 					cursPos = 0
 					screenChange = 1
@@ -922,11 +940,19 @@ while True:
 					curScreen = 3
 					cursPos = 0
 					screenChange = 1
-				
 		time.sleep(0.1)
 		
 	#Check if the current time is equal to the alarm time
 	#If it is, play audio
+	if inputMode == True and GPIO.input(1) and pygame.mixer.music.get_busy() == False and fileNum != -1:
+		GPIO.output(0,GPIO.HIGH)
+		pygame.mixer.music.load(dir_list[fileNum])
+		pygame.mixer.music.play(0,0.0)
+		time.sleep(60)
+	
+	if pygame.mixer.music.get_busy() == False:
+		GPIO.output(0,GPIO.Low)
+
 	if startDate == 0:
 		if alarm[0] != -1 and fileNum != -1:
 			hour = str(alarm[0])+str(alarm[1])
