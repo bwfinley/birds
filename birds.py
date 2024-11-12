@@ -12,6 +12,7 @@ import time
 import datetime
 import RPi.GPIO as GPIO
 import mutagen.mp3
+import shutil
 
 
 #globals
@@ -387,16 +388,24 @@ def refresh_screen(screenChange):
 			print_time()
 		mylcd.lcd_display_string(time.strftime("%H:%M",cTime),1,15)
 		if cursPos == 0:
-			mylcd.lcd_display_string(" ",3,0)
-			mylcd.lcd_display_string(" ",4,15)
 			mylcd.lcd_display_string(">",2,0)
-		if cursPos == 1:
+			mylcd.lcd_display_string(" ",3,0)
+			mylcd.lcd_display_string(" ",4,0)
 			mylcd.lcd_display_string(" ",4,15)
+		if cursPos == 1:
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(">",3,0)
+			mylcd.lcd_display_string(" ",4,0)
+			mylcd.lcd_display_string(" ",4,15)
 		if cursPos == 2:
 			mylcd.lcd_display_string(" ",2,0)
 			mylcd.lcd_display_string(" ",3,0)
+			mylcd.lcd_display_string(">",4,0)
+			mylcd.lcd_display_string(" ",4,15)
+		if cursPos == 3:
+			mylcd.lcd_display_string(" ",2,0)
+			mylcd.lcd_display_string(" ",3,0)
+			mylcd.lcd_display_string(" ",4,0)
 			mylcd.lcd_display_string(">",4,15)
 
 	#If the current screen is the sound screen
@@ -535,8 +544,9 @@ def update():
 			print_main()
 			return
 		with open(file_path, 'r') as src:
-			with open('/home/birdistheword/birds-git/birds', 'w') as dest:
+			with open('/home/birdistheword/birds-git/birds/birds.py', 'w') as dest:
 				shutil.copyfileobj(src,dest)
+		subprocess.call(['sudo', 'reboot'])
 				
 if os.path.isfile('config.ini'):
 	print("read config")
@@ -951,7 +961,7 @@ while True:
 		time.sleep(60)
 	
 	if pygame.mixer.music.get_busy() == False:
-		GPIO.output(0,GPIO.Low)
+		GPIO.output(0,GPIO.LOW)
 
 	if startDate == 0:
 		if alarm[0] != -1 and fileNum != -1:
